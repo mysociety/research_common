@@ -488,6 +488,16 @@ class AltairChart(BaseChart):
             self.options["x"] = alt.X(self.options["x"])
         if isinstance(self.options["y"], str):
             self.options["y"] = alt.X(self.options["y"])
+        if isinstance(self.options["tooltip"], list):
+            nl = []
+            for t in self.options["tooltip"]:
+                if isinstance(t, str):
+                    nl.append(alt.Tooltip(t.replace(".", ""), title=t))
+                else:
+                    t.title = t.shorthand
+                    t.shorthand = t.shorthand.replace(".", "")
+                    nl.append(t)
+            self.options["tooltip"] = nl
 
     def safe_options(self):
         new_options = dict(self.options)
@@ -495,6 +505,15 @@ class AltairChart(BaseChart):
         for b in banned:
             if b in new_options:
                 del new_options[b]
+
+        for o in ["x", "y"]:
+            original = new_options[o].shorthand
+            shorthand = new_options[o].shorthand
+            if isinstance(shorthand, str) and "." in shorthand:
+                shorthand = shorthand.replace(".", "")
+                new_options[o].shorthand = shorthand
+                new_options[o].title = original
+
         return new_options
 
     def y_axis_format(self, *args, **kwargs):
@@ -505,8 +524,19 @@ class AltairChart(BaseChart):
         new_axis = alt.Axis(*args, **kwargs)
         self.options["x"].axis = new_axis
 
+    def fix_df(self):
+        """
+        generic column fixes
+        """
+        df = self.df
+        new_cols = {x: x.replace(".", "") for x in df.columns}
+        ndf = df.rename(columns=new_cols)
+
+        return ndf
+
     def render_object(self):
-        obj = alt.Chart(self.df)
+
+        obj = alt.Chart(self.fix_df())
         if self.chart_type == "line":
             obj = obj.mark_line(point=True)
         if self.chart_type == "bar":
