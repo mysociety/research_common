@@ -1,5 +1,5 @@
 '''
-Objects to manage creation of charts and their 
+Objects to manage creation of charts and their
 translation into images
 '''
 
@@ -11,20 +11,23 @@ import random
 import shutil
 import string
 import tempfile
+import time
 from collections import OrderedDict
 from hashlib import md5
-import pandas as pd
+
 import altair as alt
+import pandas as pd
+from altair_saver import save
 from django.conf import settings
 from django.template import Context, Template
-from django.template.loader import get_template
+from django.template.loader import get_template, render_to_string
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from urllib3.exceptions import MaxRetryError
 from useful_inkleby.files import QuickGrid, QuickText
-from altair_saver import save
-from django.template.loader import render_to_string, get_template
 
 export_images = settings.EXPORT_CHARTS
 force_reload = settings.FORCE_EXPORT_CHARTS
@@ -113,6 +116,7 @@ class Chrome(object):
     """
     driver = None
     render_session = False
+    count = 0
 
     @classmethod
     def get_driver(cls):
@@ -124,6 +128,12 @@ class Chrome(object):
         cls.driver = webdriver.Chrome(executable_path=chrome_driver_path,
                                       chrome_options=options)
         return cls.driver
+
+    @classmethod
+    def reset_driver(cls):
+        if cls.driver:
+            cls.driver.quit()
+        cls.render_session = False
 
     def __del__(self):
         if self.driver:
@@ -148,7 +158,7 @@ class Chrome(object):
         cls.render_session = True
 
     @classmethod
-    def render_altair(cls, chart):
+    def _render_altair(cls, chart):
         if cls.render_session is False:
             cls.start_render_session()
         driver = cls.get_driver()
@@ -166,6 +176,20 @@ class Chrome(object):
         encoded = base64.b64decode(bytes(canvas_base64, 'utf-8'))
         with open(loc, "wb") as fh:
             fh.write(encoded)
+        return True
+
+    @classmethod
+    def render_altair(cls, chart):
+        result = None
+        # there's a periodic time out error we need to try and catch and avoid
+        while not result:
+            try:
+                result = cls._render_altair(chart)
+            except (TimeoutException, MaxRetryError):
+                print("Timeout exception, resetting driver and retrying.")
+                cls.reset_driver()
+                time.sleep(5)
+            
 
 
 class ChartCollection(object):
@@ -562,7 +586,7 @@ class AltairChart(BaseChart):
 
 class Table(BaseChart):
     """
-    Rather than rendering an image, this outputs 
+    Rather than rendering an image, this outputs
     an html table
     """
     package_name = "datatables"
