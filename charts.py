@@ -27,7 +27,6 @@ from django.utils.text import slugify
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from urllib3.exceptions import MaxRetryError
-from useful_inkleby.files import QuickGrid, QuickText
 
 export_images = settings.EXPORT_CHARTS
 force_reload = settings.FORCE_EXPORT_CHARTS
@@ -385,35 +384,6 @@ class BaseChart(object):
 
         self.ident = self.ident[:6]
 
-    def load_from_file(self, path):
-        """
-        quick population from spreadsheet
-        """
-        qg = QuickGrid().open(path)
-        for x, h in enumerate(qg.header):
-            col_name = h
-            types = set([type(i) for i in qg.get_column(x)])
-            types = list(types)
-            if len(types) > 1:
-                col_type = "string"
-            else:
-                t = types[0]
-                if t in [float, int]:
-                    col_type = "number"
-                elif t in ["boolean"]:
-                    col_type = "boolean"
-                else:
-                    col_type = "string"
-
-            if col_name.lower() == "year":
-                col_type = 'string'
-
-            self.add_column(name=col_name,
-                            type=col_type)
-
-        self.rows = qg.data
-
-        return self
 
     def compile_options(self):
         return self.options
@@ -512,7 +482,7 @@ class AltairChart(BaseChart):
             self.options["x"] = alt.X(self.options["x"])
         if isinstance(self.options["y"], str):
             self.options["y"] = alt.X(self.options["y"])
-        if isinstance(self.options["tooltip"], list):
+        if "tooltip" in self.options and isinstance(self.options["tooltip"], list):
             nl = []
             for t in self.options["tooltip"]:
                 if isinstance(t, str):
@@ -582,7 +552,7 @@ class AltairChart(BaseChart):
         obj = self.custom_settings(obj)
 
         return obj
-
+        
 
 class Table(BaseChart):
     """
@@ -601,17 +571,33 @@ class Table(BaseChart):
         self.format_transformation = {}
         self.format_on_row = {}
         self.format = self.format_transformation
+        self.style = {}
+        self.style_on_row = {}
         if self.df is None:
             self.df = pd.DataFrame()
 
     def format_cell(self, column, row, value):
-
+        """
+        create a human readable format for the cell
+        """
         transform = self.format_on_row.get(column, None)
         if transform:
             return transform(row)
         if transform is None:
             transform = self.format_transformation.get(column, lambda x: x)
             return transform(value)
+
+    def style_cell(self, column, row, value):
+        """
+        apply a style to the cell
+        """
+        transform = self.style_on_row.get(column, None)
+        if transform:
+            return transform(row)
+        if transform is None:
+            transform = self.style.get(column, None)
+            if transform:
+                return transform(value)
 
     def render_html_table(self):
         """
@@ -623,7 +609,8 @@ class Table(BaseChart):
             for c in self.df.columns:
                 value = r[c]
                 formatted_value = self.format_cell(c, r, value)
-                combo = {"f": formatted_value, "v": value}
+                style = self.style_cell(c, r, value)
+                combo = {"f": formatted_value, "v": value, "s": style}
                 row.append(combo)
             table_rows.append(row)
 
