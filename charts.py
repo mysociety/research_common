@@ -75,13 +75,20 @@ palette = ["colour_blue_dark_2",
 
 palette_colors = [colours[x] for x in palette]
 
+font = "Source Sans Pro"
+
 mysoc_theme = {
+    
     'config': {
+        "title": {'font': font},
         'mark': {
             'color': colours[palette[0]],
             # 'fill': colours[palette[0]],
         },
         'axis': {
+            "labelFont": font,
+            "labelFontSize": 12,
+            "titleFont": font,
             'titleFontSize': 15,
         },
     }
