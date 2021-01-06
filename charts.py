@@ -69,40 +69,70 @@ colours = {'colour_orange': '#f79421',
 palette = ["colour_blue_dark_2",
            "colour_red",
            "colour_green",
-           "colour_violet",
-           "colour_yellow",
-           "colour_mid_grey"]
+           "colour_violet"]
 
 palette_colors = [colours[x] for x in palette]
 
 font = "Source Sans Pro"
 
 mysoc_theme = {
-    
+
     'config': {
-        "title": {'font': font},
+        "title": {'font': font,
+                  'fontSize': 30,
+                  'anchor': "start"
+                  },
         'mark': {
             'color': colours[palette[0]],
             # 'fill': colours[palette[0]],
         },
         'axis': {
             "labelFont": font,
+            "labelFontSize": 14,
+            "titleFont": font,
+            'titleFontSize': 16,
+            'domain': False,
+            'offset': 10
+        },
+        'axisX': {
+            'domain': False,
+            'grid': False,
+            "ticks": False,
+        },
+        'axisY': {
+            'domain': False,
+            "ticks": False,
+        },
+        'view': {
+            "stroke": "transparent"
+        },
+        'legend': {
+            "orient": 'bottom',
+            "labelFont": font,
             "labelFontSize": 12,
             "titleFont": font,
-            'titleFontSize': 15,
-        },
+            "titleFontSize": 12,
+            "title": "",
+            "offset": 0
+
+        }
     }
 }
 
+original_palette = [
+    # Start with category10 color cycle:
+    "#1f77b4", '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+    # Then continue with the paired lighter colors from category20:
+    '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
+    '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5']
+
+palette_colors = palette_colors[:1]
+
+new_palette = palette_colors + original_palette[len(palette_colors):]
+
 mysoc_theme.setdefault('encoding', {}).setdefault('color', {})['scale'] = {
-    'range': [
-        # Start with category10 color cycle:
-        colours[palette[0]], '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-        # Then continue with the paired lighter colors from category20:
-        '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
-        '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5',
-    ],
+    'range': new_palette,
 }
 
 # register the custom theme under a chosen name
@@ -195,7 +225,6 @@ class Chrome(object):
                 print("Timeout exception, resetting driver and retrying.")
                 cls.reset_driver()
                 time.sleep(5)
-            
 
 
 class ChartCollection(object):
@@ -391,7 +420,6 @@ class BaseChart(object):
 
         self.ident = self.ident[:6]
 
-
     def compile_options(self):
         return self.options
 
@@ -475,8 +503,10 @@ class AltairChart(BaseChart):
     package_name = "altair"
     code_template = "charts//altair_code.html"
 
-    def __init__(self, df=None, chart_type="line", interactive=False, *args, **kwargs):
+    def __init__(self, df=None, title=None, footer=None, chart_type="line", interactive=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.title = title
+        self.footer = footer
         self.link_lookup = {}
         self.df = df
         self.chart_type = chart_type
@@ -548,18 +578,26 @@ class AltairChart(BaseChart):
         if self.interactive:
             obj = obj.interactive()
 
-        # obj = obj.configure_legend(
-        #        orient='bottom'
-        #        )
+        properties = {"width": "container"}
 
-        obj = obj.properties(
-            width='container',
-        )
+        if self.title:
+            properties["title"] = self.title
+
+        obj = obj.properties(**properties)
+
+        if self.footer:
+            obj = obj.properties(title=alt.TitleParams(self.footer,
+                                                       baseline='bottom',
+                                                       orient='bottom',
+                                                       anchor='end',
+                                                       fontWeight='normal',
+                                                       fontSize=10
+                                                       ))
 
         obj = self.custom_settings(obj)
 
         return obj
-        
+
 
 class Table(BaseChart):
     """
