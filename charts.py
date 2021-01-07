@@ -28,6 +28,8 @@ from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from urllib3.exceptions import MaxRetryError
 
+html_chart_titles = False
+org_logo = "/sites/foi-monitor/static/img/mysociety-logo.jpg"
 export_images = settings.EXPORT_CHARTS
 force_reload = settings.FORCE_EXPORT_CHARTS
 
@@ -82,10 +84,6 @@ mysoc_theme = {
                   'fontSize': 30,
                   'anchor': "start"
                   },
-        'mark': {
-            'color': colours[palette[0]],
-            # 'fill': colours[palette[0]],
-        },
         'axis': {
             "labelFont": font,
             "labelFontSize": 14,
@@ -95,17 +93,35 @@ mysoc_theme = {
             'offset': 10
         },
         'axisX': {
-            'domain': False,
-            'grid': False,
+            "labelFont": font,
+            "labelFontSize": 14,
+            "titleFont": font,
+            'titleFontSize': 16,
+            'domain': True,
+            'grid': True,
             "ticks": False,
+            "gridWidth": 0.4,
+
         },
         'axisY': {
-            'domain': False,
+            "labelFont": font,
+            "labelFontSize": 14,
+            "titleFont": font,
+            'titleFontSize': 16,
+            'domain': True,
             "ticks": False,
+            "titleAngle": 0,  # horizontal
+            "titleY": -10,  # move it up
+            "titleX": 0,
+            "gridWidth": 0.4,
         },
         'view': {
-            "stroke": "transparent"
+            "stroke": "transparent",
         },
+        "line": {
+            "strokeWidth": 2,
+        },
+        'mark': {"shape": "cross"},
         'legend': {
             "orient": 'bottom',
             "labelFont": font,
@@ -113,8 +129,8 @@ mysoc_theme = {
             "titleFont": font,
             "titleFontSize": 12,
             "title": "",
-            "offset": 0
-
+            "offset": 18,
+            "symbolType": 'square',
         }
     }
 }
@@ -235,6 +251,7 @@ class ChartCollection(object):
 
     def __init__(self, slug="", *args):
         self.slug = slug
+        self.logo = org_logo
         self.charts = []
         for x in args:
             self.register(x)
@@ -503,7 +520,7 @@ class AltairChart(BaseChart):
     package_name = "altair"
     code_template = "charts//altair_code.html"
 
-    def __init__(self, df=None, title=None, footer=None, chart_type="line", interactive=False, *args, **kwargs):
+    def __init__(self, df=None, title=None, footer=None, chart_type="line", interactive=False, ratio=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title = title
         self.footer = footer
@@ -512,6 +529,8 @@ class AltairChart(BaseChart):
         self.chart_type = chart_type
         self.interactive = interactive
         self.custom_settings = lambda x: x
+        self.ratio = ratio
+        self.html_chart_titles = html_chart_titles
 
     def set_options(self, **kwargs):
         self.options.update(kwargs)
@@ -569,7 +588,7 @@ class AltairChart(BaseChart):
 
         obj = alt.Chart(self.fix_df())
         if self.chart_type == "line":
-            obj = obj.mark_line(point=True)
+            obj = obj.mark_line(point={"size":100})
         if self.chart_type == "bar":
             obj = obj.mark_bar()
         if self.chart_type == "step":
@@ -580,7 +599,10 @@ class AltairChart(BaseChart):
 
         properties = {"width": "container"}
 
-        if self.title:
+        if self.ratio:
+            properties["height"] = "container"
+
+        if self.title and self.html_chart_titles is False:
             properties["title"] = self.title
 
         obj = obj.properties(**properties)
