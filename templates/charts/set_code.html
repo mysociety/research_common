@@ -159,7 +159,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (supportsES6 == false){
       $(".es5").show()
     } else {
-      drawCharts()
+      document.fonts.ready.then(() => drawCharts())
+      
     }
 }, false);
 
