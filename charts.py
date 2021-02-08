@@ -76,6 +76,7 @@ class Chrome(object):
 
         options = webdriver.ChromeOptions()
         options.add_argument("headless")
+        options.add_argument("--no-sandbox")
         cls.driver = webdriver.Chrome(executable_path=chrome_driver_path,
                                       chrome_options=options)
         return cls.driver
@@ -125,6 +126,7 @@ class Chrome(object):
         canvas_base64 = driver.execute_script(
             "return arguments[0].toDataURL('image/png').substring(21);", canvas)
         encoded = base64.b64decode(bytes(canvas_base64, 'utf-8'))
+        print(loc)
         with open(loc, "wb") as fh:
             fh.write(encoded)
         return True
