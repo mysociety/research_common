@@ -499,7 +499,11 @@ class AltairChart(BaseChart):
 
         # add spacing to x axis to match ggplot approach
         values = None
-        values = x_axis["axis"]["values"]
+        try:
+            values = x_axis["axis"]["values"]
+        except TypeError:
+            # x axis values not explicitly defined
+            pass
         if isinstance(values, pd.Series) is False:
             values = None
             try:
