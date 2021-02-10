@@ -68,6 +68,7 @@ class Chrome(object):
     driver = None
     render_session = False
     count = 0
+    reset_count = 100
 
     @classmethod
     def get_driver(cls):
@@ -85,6 +86,7 @@ class Chrome(object):
     def reset_driver(cls):
         if cls.driver:
             cls.driver.quit()
+            cls.driver = None
         cls.render_session = False
 
     def __del__(self):
@@ -136,10 +138,16 @@ class Chrome(object):
         result = None
         # there's a periodic time out error we need to try and catch and avoid
         while not result:
+            if cls.count >= cls.reset_count:
+                cls.count = 0
+                cls.reset_driver()
+                time.sleep(5)
             try:
                 result = cls._render_altair(chart)
+                cls.count += 1
             except (TimeoutException, MaxRetryError):
                 print("Timeout exception, resetting driver and retrying.")
+                cls.count = 0
                 cls.reset_driver()
                 time.sleep(5)
 
