@@ -44,6 +44,27 @@ csv_folder = settings.CSV_FOLDER
 chrome_driver_path = settings.CHROME_DRIVER
 
 
+def group_to_other(df, values_col, years_col, labels_col,
+                   cut_off=2, agg_func="sum", other_label="Other"):
+    """
+    Group to get lowest values into an 'Other' category
+    """
+    pt = df.pivot_table(values_col, labels_col)
+    values = pt[values_col]
+    if len(values.unique()) <= cut_off:
+        return df
+    top_sectors = values.sort_values(ascending=False)[:cut_off].index
+
+    df["grouped_labels"] = df[labels_col]
+    df.loc[~df[labels_col].isin(
+        top_sectors), "grouped_labels"] = other_label
+
+    gb = df.groupby(["grouped_labels", years_col]).agg(
+        {values_col: agg_func}).reset_index()
+    gb.columns = [labels_col, years_col, values_col]
+    return gb
+
+
 def query_to_df(query, values: dict):
     """
     Given a django queryset and a dictionary mapping
@@ -270,6 +291,7 @@ class BaseChart(object):
         if file_name:
             self.load_from_file(file_name)
         self.options = {"title": name}
+        self.text_options = {}
         self.cell_modifications = []
         self.df = None
         self.header = OrderedDict()
@@ -400,6 +422,9 @@ class BaseChart(object):
     def set_options(self, **kwargs):
         self.options.update(kwargs)
 
+    def set_text_options(self, **kwargs):
+        self.text_options.update(kwargs)
+
     def export_data(self):
 
         loc = self.csv_location
@@ -428,6 +453,7 @@ class AltairChart(BaseChart):
         self.ratio = ratio
         self.html_chart_titles = html_chart_titles
         self._json = ""
+        self.data_source = ""
 
         self.use_render_site = use_render_site
         if self.use_render_site is None:
@@ -577,6 +603,15 @@ class AltairChart(BaseChart):
         obj = obj.encode(**options)
         if self.interactive:
             obj = obj.interactive()
+
+        # process any label functions
+        if self.text_options:
+            text_opts = dict(self.text_options)
+            text_option = text_opts["text"]
+            del text_opts["text"]
+            text_obj = obj.mark_text(**text_opts)
+            text_obj = text_obj.encode(text=text_option)
+            obj = (obj + text_obj)
 
         properties = {"width": "container"}
 
