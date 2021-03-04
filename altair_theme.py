@@ -106,7 +106,7 @@ mysoc_theme = {
         "line": {
             "strokeWidth": 3,
         },
-        "bar":{"color": palette_colors[0]},
+        "bar": {"color": palette_colors[0]},
         'mark': {"shape": "cross"},
         'legend': {
             "orient": 'bottom',
@@ -121,7 +121,7 @@ mysoc_theme = {
     }
 }
 
-#set default has colours
+# set default has colours
 original_palette = [
     # Start with category10 color cycle:
     "#1f77b4", '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
