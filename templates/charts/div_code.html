@@ -5,8 +5,8 @@
 <p class="chart-title" >{{chart.title}}</p>
 {% endif %}
 <div id="{{chart.ident}}" style="width:100%;margin-bottom:50px;"></div>
-<img src="{{chart.image_url}}" class="center-image-no-responsive es5" style="display:none">
+<img src="{{chart.image_url|safe}}" class="center-image-no-responsive es5" style="display:none">
 <noscript>
-<img src="{{chart.image_url}}" class="center-image-no-responsive">
+<img src="{{chart.image_url|safe}}" class="center-image-no-responsive">
 </noscript>
 </div>

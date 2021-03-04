@@ -15,5 +15,5 @@ const {{chart.ident}}_view = results.view;
 {{chart.ident}}_web_action = document.createElement('a');
 {{chart.ident}}_web_action.href = "#";
 {{chart.ident}}_web_action.textContent = "Copy (for web)";
-{{chart.ident}}_web_action.onclick = function(event) {toClipboard({{chart.ident}}, {{chart.ident}}_view, {{chart.ident}}_spec); event.preventDefault();};
+{{chart.ident}}_web_action.onclick = function(event) {toClipboard({{chart.ident}}, {{chart.ident}}_view, {{chart.ident}}_spec, "{{chart.data_source|safe}}"); event.preventDefault();};
 {{chart.ident}}.querySelector('.vega-actions').appendChild({{chart.ident}}_web_action)
