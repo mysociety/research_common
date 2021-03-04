@@ -6,6 +6,7 @@ Mirrors ggplot theme
 
 import altair as alt
 
+# brand colours
 colours = {'colour_orange': '#f79421',
            'colour_off_white': '#f3f1eb',
            'colour_light_grey': '#e2dfd9',
@@ -22,12 +23,40 @@ colours = {'colour_orange': '#f79421',
            'colour_blue_dark': '#2b8cdb',
            'colour_blue_dark_2': '#207cba'}
 
-palette = ["colour_blue_dark_2",
-           "colour_red",
-           "colour_green",
-           "colour_violet"]
+# based on data visualisation colour palette
+adjusted_colours = {"colour_yellow": "#ffe269",
+                    "colour_orange": "#f4a140",
+                    "colour_berry": "#e02653",
+                    "colour_purple": "#a94ca6",
+                    "colour_blue": "#4faded",
+                    "colour_dark_blue": "#0a4166"}
 
-palette_colors = [colours[x] for x in palette]
+monochrome_colours = {"colour_blue_light_20": "#acd8f6",
+                      "colour_blue": "#4faded",
+                      "colour_blue_dark_20": "#147cc2",
+                      "colour_blue_dark_30": "#0f5e94",
+                      "colour_blue_dark_40": "#0a4166",
+                      "colour_blue_dark_50": "#062337",
+                      }
+
+palette = ["colour_dark_blue",
+           "colour_berry",
+           "colour_orange",
+           "colour_blue",
+           "colour_purple",
+           "colour_yellow"]
+
+monochrome_palette = ["colour_blue_light_20",
+                      "colour_blue",
+                      "colour_blue_dark_20",
+                      "colour_blue_dark_30",
+                      "colour_blue_dark_40",
+                      "colour_blue_dark_50",
+                      ]
+
+palette_colors = [adjusted_colours[x] for x in palette]
+
+monochrome_palette_colors = [monochrome_colours[x] for x in monochrome_palette]
 
 font = "Source Sans Pro"
 
@@ -62,20 +91,22 @@ mysoc_theme = {
             "labelFontSize": 14,
             "titleFont": font,
             'titleFontSize': 16,
+            "titleAlign": "left",
             'labelPadding': 10,
             'domain': True,
             "ticks": False,
             "titleAngle": 0,
             "titleY": -10,
-            "titleX": 0,
+            "titleX": -50,
             "gridWidth": 0.4,
         },
         'view': {
             "stroke": "transparent",
         },
         "line": {
-            "strokeWidth": 2,
+            "strokeWidth": 3,
         },
+        "bar":{"color": palette_colors[0]},
         'mark': {"shape": "cross"},
         'legend': {
             "orient": 'bottom',
@@ -90,6 +121,7 @@ mysoc_theme = {
     }
 }
 
+#set default has colours
 original_palette = [
     # Start with category10 color cycle:
     "#1f77b4", '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
@@ -98,8 +130,7 @@ original_palette = [
     '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
     '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5']
 
-palette_colors = palette_colors[:1]
-
+# use new palette for as long as possible
 new_palette = palette_colors + original_palette[len(palette_colors):]
 
 mysoc_theme.setdefault('encoding', {}).setdefault('color', {})['scale'] = {
