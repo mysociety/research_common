@@ -17,6 +17,7 @@ from hashlib import md5
 from urllib.parse import urlencode
 
 import altair as alt
+from altair.utils.schemapi import UndefinedType
 import numpy as np
 import pandas as pd
 from altair_saver import save
@@ -32,7 +33,13 @@ from selenium.common.exceptions import TimeoutException
 from urllib3.exceptions import MaxRetryError
 
 # load theme
-import research_common.altair_theme
+import research_common.altair_theme as theme
+
+# register the custom theme under a chosen name
+alt.themes.register('mysoc_theme', lambda: theme.mysoc_theme)
+# enable the newly registered theme
+alt.themes.enable('mysoc_theme')
+
 
 html_chart_titles = False
 org_logo = settings.ORG_LOGO
@@ -583,6 +590,44 @@ class AltairChart(BaseChart):
         self._json = json.dumps(di)
         return self._json
 
+    def accessible_title(self):
+        title = self.title
+        if isinstance(title, alt.TitleParams):
+            return title.text
+        else:
+            return title
+
+    def accessible_subtitle(self):
+        if isinstance(self.title, alt.TitleParams):
+            if hasattr(self.title, "subtitle"):
+                return self.title.subtitle
+        return []
+
+    def accessible_df(self):
+        """
+        Make a table that can be put into a longdesc
+        that is semi helpful for screen readers
+        """
+        df = self.fix_df()
+        
+        def clickable_link(url):
+            template = '<a href="{0}">{0}</a>'
+            return mark_safe(template.format(url))
+
+        # slightly more readable colours
+        if "style" in df.columns:
+            df["style"] = df["style"].map(theme.colour_lookup)
+            df["style"] = df["style"].str.replace("colour_","")
+            df["style"] = df["style"].str.replace("_"," ")
+        txt = df.to_html(index=False)
+
+        # clickable links if there are urls
+        if "url" in df.columns:
+            for x, item in df["url"].iteritems():
+                txt = txt.replace(item, clickable_link(item))
+
+        return txt
+
     def render_object(self):
         df = self.fix_df()
         obj = alt.Chart(df)
@@ -594,6 +639,22 @@ class AltairChart(BaseChart):
             obj = obj.mark_line(interpolate='step-after', point=True)
         options = self.safe_options()
         x_axis = options['x']
+        y_axis = options['y']
+        
+        # hack to push the y-axis to the rough position of the left most label
+        # on the y axis
+        axis_name = ""
+        if not isinstance(y_axis.shorthand, UndefinedType):
+            axis_name = y_axis.shorthand
+        if not isinstance(y_axis.field, UndefinedType):
+            axis_name = y_axis.field
+        if axis_name:
+            col = df[axis_name]
+            max_len = col.astype(str).str.len().max()
+            if max_len > 5:
+                if not hasattr(y_axis, "axis"):
+                    y_axis.axis = alt.Axis()
+                y_axis.axis.titleX = 0 - max_len * 8
 
         # add spacing to x axis to match ggplot approach
         values = None

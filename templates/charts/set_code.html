@@ -32,10 +32,23 @@ color:#000
         }
       }();
 
+      function turn_on_external_images(){
+        // activate manual images for older browsers
+        $('.es5').each(function() {
+        var $t = $(this);
+        $t.attr({
+            "src": $t.attr('_src')
+          })
+          .removeAttr('_src');
+        });
+        $(".es5").show()
+      }
+
+
 
       if (supportsES6 == false){
         document.addEventListener('DOMContentLoaded', function() {
-         $(".es5").show()
+         turn_on_external_images()
       })}
       </script>
 
@@ -73,7 +86,7 @@ color:#000
           el.style.width = "20cm";
           el.style.height = "10cm";
           spec["height"] = "container";
-
+  
         results = await vegaEmbed("#" + el.id, spec, embed_opt);
         view = results.view;
  
@@ -163,10 +176,6 @@ color:#000
       }
 
       async function drawCharts() {
-        True = true;
-        False = false;
-        None = null;
-
         {% for chart in charts %}
 		{% if make_static %}
             {{chart.render_code_static}}
@@ -179,12 +188,7 @@ color:#000
 
 document.addEventListener('DOMContentLoaded', function() {
     // test for es6 support, if not throw up the static version
-    if (supportsES6 == false){
-      $(".es5").show()
-    } else {
       document.fonts.ready.then(() => drawCharts())
-      
-    }
 }, false);
 
     </script>

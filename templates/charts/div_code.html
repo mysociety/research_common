@@ -1,12 +1,26 @@
-
-
 <div class="chart-and-title">
 {% if chart.title and chart.html_chart_titles %}
 <p class="chart-title" >{{chart.title}}</p>
 {% endif %}
-<div id="{{chart.ident}}" style="width:100%;margin-bottom:50px;"></div>
-<img src="{{chart.image_url|safe}}" class="center-image-no-responsive es5" style="display:none">
+<div id="{{chart.ident}}" style="width:100%;margin-bottom:50px" role="img" alt="Chart: {{chart.accessible_title}}" longdesc="#longdesc_{{chart.itent}}"></div>
+<img _src="{{chart.image_url|safe}}" class="center-image-no-responsive es5" style="display:none">
 <noscript>
 <img src="{{chart.image_url|safe}}" class="center-image-no-responsive">
 </noscript>
+</div>
+
+<div id="longdesc_{{chart.itent}}" class="longdesc" style="display:none">
+
+<p>Dataframe for chart: {{chart.accessible_title}}<p>
+
+{% with chart.accessible_subtitle as subtitles %}
+    {% if subtitles %}
+        <p>Subtitles:<p>
+        {% for s in subtitles %}
+            <p>{{s}}<p>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+{{chart.accessible_df|safe}}
 </div>

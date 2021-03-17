@@ -39,6 +39,9 @@ monochrome_colours = {"colour_blue_light_20": "#acd8f6",
                       "colour_blue_dark_50": "#062337",
                       }
 
+all_colours = colours | adjusted_colours | monochrome_colours
+colour_lookup = {y: x for x, y in all_colours.items()}
+
 palette = ["colour_dark_blue",
            "colour_berry",
            "colour_orange",
@@ -98,7 +101,7 @@ mysoc_theme = {
             "ticks": False,
             "titleAngle": 0,
             "titleY": -10,
-            "titleX": -50,
+            "titleX": -65,
             "gridWidth": 0.4,
         },
         'view': {
@@ -137,8 +140,3 @@ new_palette = palette_colors + original_palette[len(palette_colors):]
 mysoc_theme.setdefault('encoding', {}).setdefault('color', {})['scale'] = {
     'range': new_palette,
 }
-
-# register the custom theme under a chosen name
-alt.themes.register('mysoc_theme', lambda: mysoc_theme)
-# enable the newly registered theme
-alt.themes.enable('mysoc_theme')
