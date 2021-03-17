@@ -1,5 +1,5 @@
 
-var {{chart.ident}}_spec = {{chart.render_object.to_dict|safe}};
+var {{chart.ident}}_spec = {{chart.json|safe}};
 const {{chart.ident}} = document.getElementById('{{chart.ident}}');
 {% if chart.ratio %}
 height = {{chart.ident}}.clientWidth / {{chart.ratio}}

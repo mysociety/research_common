@@ -14,11 +14,13 @@ import tempfile
 import time
 from collections import OrderedDict
 from hashlib import md5
+from urllib.parse import urlencode
 
 import altair as alt
 import numpy as np
 import pandas as pd
 from altair_saver import save
+from cryptography.fernet import Fernet
 from django.conf import settings
 from django.template import Context, Template
 from django.template.loader import get_template, render_to_string
@@ -68,6 +70,7 @@ class Chrome(object):
     driver = None
     render_session = False
     count = 0
+    reset_count = 100
 
     @classmethod
     def get_driver(cls):
@@ -76,6 +79,7 @@ class Chrome(object):
 
         options = webdriver.ChromeOptions()
         options.add_argument("headless")
+        options.add_argument("--no-sandbox")
         cls.driver = webdriver.Chrome(executable_path=chrome_driver_path,
                                       chrome_options=options)
         return cls.driver
@@ -84,6 +88,7 @@ class Chrome(object):
     def reset_driver(cls):
         if cls.driver:
             cls.driver.quit()
+            cls.driver = None
         cls.render_session = False
 
     def __del__(self):
@@ -118,13 +123,14 @@ class Chrome(object):
         if os.path.exists(folder) is False:
             os.makedirs(folder)
         elem = driver.find_element_by_id("chart_standin")
-        spec = chart.render_object().to_dict()
+        spec = chart.json()
         command = "drawChart({spec})".format(spec=str(spec))
         altair_status = driver.execute_script(command)
         canvas = elem.find_element_by_tag_name("canvas")
         canvas_base64 = driver.execute_script(
             "return arguments[0].toDataURL('image/png').substring(21);", canvas)
         encoded = base64.b64decode(bytes(canvas_base64, 'utf-8'))
+        print(loc)
         with open(loc, "wb") as fh:
             fh.write(encoded)
         return True
@@ -134,10 +140,16 @@ class Chrome(object):
         result = None
         # there's a periodic time out error we need to try and catch and avoid
         while not result:
+            if cls.count >= cls.reset_count:
+                cls.count = 0
+                cls.reset_driver()
+                time.sleep(5)
             try:
                 result = cls._render_altair(chart)
+                cls.count += 1
             except (TimeoutException, MaxRetryError):
                 print("Timeout exception, resetting driver and retrying.")
+                cls.count = 0
                 cls.reset_driver()
                 time.sleep(5)
 
@@ -346,21 +358,6 @@ class BaseChart(object):
         return mark_safe(json.dumps(self.compile_options()))
 
     @property
-    def image_url(self):
-        """
-        url to where the static image should be
-        """
-        slug = self._register.slug
-        if slug:
-            return settings.MEDIA_URL + \
-                "charts/{0}/{1}/{2}/".format(slug, *self.folders) + \
-                self.safe_name_and_ident + ".png"
-        else:
-            return settings.MEDIA_URL + \
-                "charts/{0}/{1}/".format(*self.folders) + \
-                self.safe_name_and_ident + ".png"
-
-    @property
     def csv_url(self):
         """
         url to where the static image should be
@@ -419,7 +416,18 @@ class AltairChart(BaseChart):
     package_name = "altair"
     code_template = "charts//altair_code.html"
 
-    def __init__(self, df=None, title=None, footer=None, chart_type="line", interactive=False, ratio=None, default_width="container", facet_width=None, *args, **kwargs):
+    def __init__(self,
+                 df=None,
+                 title=None,
+                 footer=None,
+                 chart_type="line",
+                 interactive=False,
+                 ratio=None,
+                 default_width="container",
+                 facet_width=None,
+                 use_render_site=None,
+                 *args, **kwargs):
+
         super().__init__(*args, **kwargs)
         self.title = title
         self.footer = footer
@@ -432,6 +440,14 @@ class AltairChart(BaseChart):
         self.html_chart_titles = html_chart_titles
         self.default_width = default_width
         self.facet_width = facet_width
+        self._json = ""
+        self.use_render_site = use_render_site
+        if self.use_render_site is None:
+            self.use_render_site = False
+        if settings.VEGALITE_USE_SERVER:
+            self.use_render_site = True
+        if not settings.VEGALITE_SERVER_URL:
+            self.use_render_site = False
 
     def set_options(self, **kwargs):
         self.options.update(kwargs)
@@ -484,6 +500,61 @@ class AltairChart(BaseChart):
         ndf = df.rename(columns=new_cols)
 
         return ndf
+
+    @property
+    def image_url(self):
+        if self.use_render_site:
+            return self.server_based_render_url()
+        else:
+            return self.rendered_image_url()
+
+    def rendered_image_url(self):
+        """
+        url to where the static image should be
+        """
+        slug = self._register.slug
+        if slug:
+            return settings.MEDIA_URL + \
+                "charts/{0}/{1}/{2}/".format(slug, *self.folders) + \
+                self.safe_name_and_ident + ".png"
+        else:
+            return settings.MEDIA_URL + \
+                "charts/{0}/{1}/".format(*self.folders) + \
+                self.safe_name_and_ident + ".png"
+
+    def server_based_render_url(self):
+        """
+        get url for server image
+        """
+        root_url = "{0}/convert_spec".format(settings.VEGALITE_SERVER_URL)
+        spec = self.json()
+        encrypt = False
+        if settings.VEGALITE_ENCRYPT_KEY:
+            key = settings.VEGALITE_ENCRYPT_KEY.encode()
+            spec = Fernet(key).encrypt(spec.encode())
+            encrypt = True
+
+        parameters = urlencode({"spec": spec,
+                                "format": "png",
+                                "encrypted": encrypt,
+                                "width": 700})
+        return root_url + "?" + parameters
+
+    def json(self, refresh=False):
+        """
+        render and cache json for charts
+        """
+
+        if self._json and refresh is False:
+            return self._json
+
+        di = self.render_object().to_dict()
+
+        if di['config']['legend']['title'] == "":
+            di['config']['legend']['title'] = None
+
+        self._json = json.dumps(di)
+        return self._json
 
     def render_object(self):
         df = self.fix_df()
