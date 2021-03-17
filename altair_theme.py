@@ -35,6 +35,7 @@ mysoc_theme = {
 
     'config': {
         "title": {'font': font,
+                  'subtitleFont': font,
                   'fontSize': 30,
                   'anchor': "start"
                   },
