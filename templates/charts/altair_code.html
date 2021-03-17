@@ -5,6 +5,10 @@ const {{chart.ident}} = document.getElementById('{{chart.ident}}');
 height = {{chart.ident}}.clientWidth / {{chart.ratio}}
 {{chart.ident}}.style.height = height + "px";
 {% endif %}
+{% if chart.facet_width %}
+facet_width = {{chart.ident}}.clientWidth / {{chart.facet_width}}
+{{chart.ident}}_spec["width"] = Math.floor(facet_width);
+{% endif %}
 results = await vegaEmbed("#{{chart.ident}}", {{chart.ident}}_spec, embed_opt);
 const {{chart.ident}}_view = results.view;
 {{chart.ident}}_print_action = document.createElement('a');
