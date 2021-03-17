@@ -33,7 +33,7 @@ from urllib3.exceptions import MaxRetryError
 import research_common.altair_theme
 
 html_chart_titles = False
-org_logo = "/sites/foi-monitor/static/img/mysociety-logo.jpg"
+org_logo = settings.ORG_LOGO
 export_images = settings.EXPORT_CHARTS
 force_reload = settings.FORCE_EXPORT_CHARTS
 
@@ -419,7 +419,7 @@ class AltairChart(BaseChart):
     package_name = "altair"
     code_template = "charts//altair_code.html"
 
-    def __init__(self, df=None, title=None, footer=None, chart_type="line", interactive=False, ratio=None, *args, **kwargs):
+    def __init__(self, df=None, title=None, footer=None, chart_type="line", interactive=False, ratio=None, default_width="container", facet_width=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title = title
         self.footer = footer
@@ -430,6 +430,8 @@ class AltairChart(BaseChart):
         self.custom_settings = lambda x: x
         self.ratio = ratio
         self.html_chart_titles = html_chart_titles
+        self.default_width = default_width
+        self.facet_width = facet_width
 
     def set_options(self, **kwargs):
         self.options.update(kwargs)
@@ -497,7 +499,10 @@ class AltairChart(BaseChart):
 
         # add spacing to x axis to match ggplot approach
         values = None
-        values = x_axis["axis"]["values"]
+        try:
+            values = x_axis["axis"]["values"]
+        except Exception:
+            pass
         if isinstance(values, pd.Series) is False:
             values = None
             try:
@@ -513,7 +518,10 @@ class AltairChart(BaseChart):
         if self.interactive:
             obj = obj.interactive()
 
-        properties = {"width": "container"}
+        properties = {}
+
+        if self.default_width:
+            properties["width"] = self.default_width
 
         if self.ratio:
             properties["height"] = "container"
