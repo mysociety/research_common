@@ -39,7 +39,7 @@ monochrome_colours = {"colour_blue_light_20": "#acd8f6",
                       "colour_blue_dark_50": "#062337",
                       }
 
-all_colours = colours | adjusted_colours | monochrome_colours
+all_colours = {**colours, **adjusted_colours, **monochrome_colours}
 colour_lookup = {y: x for x, y in all_colours.items()}
 
 palette = ["colour_dark_blue",
