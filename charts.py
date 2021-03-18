@@ -44,6 +44,7 @@ alt.themes.enable('mysoc_theme')
 html_chart_titles = False
 org_logo = settings.ORG_LOGO
 export_images = settings.EXPORT_CHARTS
+export_csvs = settings.EXPORT_CSVS
 force_reload = settings.FORCE_EXPORT_CHARTS
 
 media_folder = settings.CHART_FOLDER
@@ -230,8 +231,9 @@ class ChartCollection(object):
         force_charts = baking_options.get("all_assets", False)
 
         if export_images is True and skip_charts is False:
-            self.export_csvs(force_charts)
             self.export_images(force_charts)
+        if export_csvs is True and skip_charts is False:
+            self.export_csvs(force_charts)
 
     def export_csvs(self, force_charts):
         for c in self.csvs_to_generate(force_charts):
