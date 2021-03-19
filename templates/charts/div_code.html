@@ -3,9 +3,9 @@
 <p class="chart-title" >{{chart.title}}</p>
 {% endif %}
 <div id="{{chart.ident}}" style="width:100%;margin-bottom:50px" role="img" alt="Chart: {{chart.accessible_title}}" longdesc="#longdesc_{{chart.itent}}"></div>
-<img _src="{{chart.image_url|safe}}" class="center-image-no-responsive es5" style="display:none">
+<img _src="{{chart.image_url|safe}}" class="center-image-no-responsive es5" alt="Chart: {{chart.accessible_title}}" longdesc="#longdesc_{{chart.itent}}" style="display:none">
 <noscript>
-<img src="{{chart.image_url|safe}}" class="center-image-no-responsive">
+<img src="{{chart.image_url|safe}}" class="center-image-no-responsive" alt="Chart: {{chart.accessible_title}}" longdesc="#longdesc_{{chart.itent}}">
 </noscript>
 </div>
 
