@@ -69,6 +69,7 @@ mysoc_theme = {
         "title": {'font': font,
                   'subtitleFont': font,
                   'fontSize': 30,
+                  'subtitleFontSize': 14,
                   'anchor': "start"
                   },
         'axis': {
@@ -97,6 +98,7 @@ mysoc_theme = {
             'titleFontSize': 16,
             "titleAlign": "left",
             'labelPadding': 10,
+            'labelLimit': 0,
             'domain': True,
             "ticks": False,
             "titleAngle": 0,
