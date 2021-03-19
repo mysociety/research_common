@@ -609,7 +609,29 @@ class AltairChart(BaseChart):
         that is semi helpful for screen readers
         """
         df = self.fix_df()
-        
+
+        used_columns = []
+
+        def get_field(o):
+            results = []
+            if isinstance(o, str):
+                results.append(o)
+            if isinstance(o, list):
+                for tooltip in o:
+                    results.extend(get_field(tooltip))
+            if hasattr(o, "shorthand"):
+                results.append(o.shorthand)
+            if hasattr(o, "field"):
+                results.append(o.field)
+            return results
+
+        # make sure we're only carrying columns that are used by the dataframe
+        for o in self.options.values():
+            used_columns.extend(get_field(o))
+
+        valid_cols = [x for x in df.columns.values if x in used_columns]
+        df = df.loc[:, valid_cols].copy()
+
         def clickable_link(url):
             template = '<a href="{0}">{0}</a>'
             return mark_safe(template.format(url))
@@ -617,8 +639,8 @@ class AltairChart(BaseChart):
         # slightly more readable colours
         if "style" in df.columns:
             df["style"] = df["style"].map(theme.colour_lookup)
-            df["style"] = df["style"].str.replace("colour_","")
-            df["style"] = df["style"].str.replace("_"," ")
+            df["style"] = df["style"].str.replace("colour_", "")
+            df["style"] = df["style"].str.replace("_", " ")
         txt = df.to_html(index=False)
 
         # clickable links if there are urls
@@ -640,7 +662,7 @@ class AltairChart(BaseChart):
         options = self.safe_options()
         x_axis = options['x']
         y_axis = options['y']
-        
+
         # hack to push the y-axis to the rough position of the left most label
         # on the y axis
         axis_name = ""
@@ -654,7 +676,7 @@ class AltairChart(BaseChart):
             if max_len > 5:
                 if not hasattr(y_axis, "axis"):
                     y_axis.axis = alt.Axis()
-                y_axis.axis.titleX = 0 - max_len * 8
+                y_axis.axis.titleX = 0 - (int(max_len * 6.5) + 10)
 
         # add spacing to x axis to match ggplot approach
         values = None
