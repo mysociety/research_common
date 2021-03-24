@@ -672,12 +672,21 @@ class AltairChart(BaseChart):
             axis_name = y_axis.shorthand
         if not isinstance(y_axis.field, UndefinedType):
             axis_name = y_axis.field
-        if axis_name:
+        if isinstance(y_axis.axis, UndefinedType):
+            y_axis.axis = alt.Axis()
+        # if any kind of formatting of number, assume the default is fine
+        if isinstance(y_axis.axis.format, UndefinedType):
+            format_str = ""
+        else:
+            format_str = y_axis.axis.format      
+        if axis_name and not format_str:
             col = df[axis_name]
+            try:
+                col = col.astype(int)
+            except ValueError:
+                pass
             max_len = col.astype(str).str.len().max()
             if max_len > 5:
-                if not hasattr(y_axis, "axis"):
-                    y_axis.axis = alt.Axis()
                 y_axis.axis.titleX = 0 - (int(max_len * 6.5) + 10)
 
         # add spacing to x axis to match ggplot approach
