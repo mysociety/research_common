@@ -678,11 +678,15 @@ class AltairChart(BaseChart):
         if isinstance(y_axis.axis.format, UndefinedType):
             format_str = ""
         else:
-            format_str = y_axis.axis.format      
+            format_str = y_axis.axis.format
         if axis_name and not format_str:
             col = df[axis_name]
             try:
                 col = col.astype(int)
+            except ValueError:
+                pass
+            try:
+                col = col.map('{:,d}'.format)
             except ValueError:
                 pass
             max_len = col.astype(str).str.len().max()
